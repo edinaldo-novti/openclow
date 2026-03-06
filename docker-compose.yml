@@ -58,9 +58,9 @@ services:
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
       OPENCLAW_GATEWAY_BIND: ${OPENCLAW_GATEWAY_BIND:-lan}
       OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: ${OPENCLAW_ALLOW_INSECURE_PRIVATE_WS:-}
-      # Database (opcional - OpenClaw usa SQLite por padrão)
-      # Use DATABASE_URL explícito se POSTGRES_* diferir do default
-      DATABASE_URL: ${DATABASE_URL:-postgresql://openclaw:openclaw_secure_password@postgres:5432/openclaw}
+      # Database (opcional - OpenClaw usa SQLite se vazio)
+      # Para Postgres: postgresql://openclaw:openclaw_secure_password@postgres:5432/openclaw
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       # API Keys - OpenAI, Anthropic, Google Gemini
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
