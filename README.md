@@ -264,6 +264,20 @@ LOCALAI_BASE_URL=http://host.docker.internal:8080/v1
 - **EISDIR** em `openclaw.json`: o config é copiado de `./config` ou gerado inline; garanta que `config/openclaw.json` exista no repositório.
 - **EACCES** em `canvas` ou `cron`: o projeto usa volume nomeado `openclaw_data` em vez de bind mount para evitar problemas de permissão.
 
+### Pareamento (pairing required)
+
+O config usa `gateway.controlUi.dangerouslyDisableDeviceAuth: true` para dispensar aprovação manual de dispositivos. O acesso continua protegido por token ou senha (`gateway.auth`). Use senha forte em produção.
+
+### Proteger o Control UI (login/senha na interface)
+
+O projeto usa **Basic Auth** no Traefik para exigir login antes de acessar a interface. Credenciais padrão: `admin` / `openclaw_secret` — **troque em produção!**
+
+Para definir seu próprio usuário e senha:
+```bash
+htpasswd -nbB seu_usuario sua_senha | sed 's/\$/\$\$/g'
+```
+Adicione o resultado em `OPENCLAW_BASIC_AUTH_USERS` no Coolify ou `.env`.
+
 ## Segurança
 
 - **Reverse Proxy:** Rode sempre atrás de um proxy (Coolify, Traefik, Nginx)

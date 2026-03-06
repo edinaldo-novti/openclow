@@ -104,6 +104,9 @@ services:
     labels:
       # Coolify/Traefik: porta do loadbalancer (evita 502 quando domínio não inclui :18789)
       - "traefik.http.services.openclaw-gateway.loadbalancer.server.port=18789"
+      # Basic Auth: protege a interface (login/senha antes de acessar o Control UI)
+      # Gere com: htpasswd -nbB USUARIO SENHA | sed 's/\$/\$\$/g'
+      - "traefik.http.middlewares.openclaw-basicauth.basicauth.users=${OPENCLAW_BASIC_AUTH_USERS:-admin:$$2b$$12$$vrIWOssdtm.1tGMSRcO58OeBF3Wibue5nx5EkPLqvOcrT1wGjhN7C}"
     depends_on:
       openclaw-init:
         condition: service_completed_successfully
@@ -118,7 +121,7 @@ services:
         if [ -f /config-source/openclaw.json ] && [ -s /config-source/openclaw.json ] && grep -q '}' /config-source/openclaw.json; then
           cp /config-source/openclaw.json /tmp/openclaw-config/openclaw.json
         else
-          printf '%s' '{"gateway":{"mode":"local","bind":"lan","controlUi":{"enabled":true,"dangerouslyAllowHostHeaderOriginFallback":true}},"agents":{"defaults":{"model":{"primary":"google/gemini-2.5-flash"}}}}' > /tmp/openclaw-config/openclaw.json
+          printf '%s' '{"gateway":{"mode":"local","bind":"lan","controlUi":{"enabled":true,"dangerouslyAllowHostHeaderOriginFallback":true,"dangerouslyDisableDeviceAuth":true}},"agents":{"defaults":{"model":{"primary":"google/gemini-2.5-flash"}}}}' > /tmp/openclaw-config/openclaw.json
         fi
         cp /config-source/agent/SOUL.md /home/node/.openclaw/workspace/ 2>/dev/null || true
         cp /config-source/agent/AGENTS.md /home/node/.openclaw/workspace/ 2>/dev/null || true
@@ -228,7 +231,7 @@ services:
         if [ -f /config-source/openclaw.json ] && [ -s /config-source/openclaw.json ] && grep -q '}' /config-source/openclaw.json; then
           cp /config-source/openclaw.json /tmp/openclaw-config/openclaw.json
         else
-          printf '%s' '{"gateway":{"mode":"local","bind":"lan","controlUi":{"enabled":true,"dangerouslyAllowHostHeaderOriginFallback":true}},"agents":{"defaults":{"model":{"primary":"google/gemini-2.5-flash"}}}}' > /tmp/openclaw-config/openclaw.json
+          printf '%s' '{"gateway":{"mode":"local","bind":"lan","controlUi":{"enabled":true,"dangerouslyAllowHostHeaderOriginFallback":true,"dangerouslyDisableDeviceAuth":true}},"agents":{"defaults":{"model":{"primary":"google/gemini-2.5-flash"}}}}' > /tmp/openclaw-config/openclaw.json
         fi
         cp /config-source/agent/SOUL.md /home/node/.openclaw/workspace/ 2>/dev/null || true
         cp /config-source/agent/AGENTS.md /home/node/.openclaw/workspace/ 2>/dev/null || true
