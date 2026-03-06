@@ -9,7 +9,10 @@ openclow/
 ├── docker-compose.yml      # Orquestração dos serviços
 ├── .env.example            # Template de variáveis de ambiente
 ├── config/
-│   └── openclaw.json       # Config gateway + canais (Teams, Mattermost)
+│   ├── openclaw.json       # Config gateway + canais (Teams, Mattermost)
+│   └── agent/              # Prompts do agente (Gemini)
+│       ├── SOUL.md         # Identidade, personalidade, valores
+│       └── AGENTS.md       # Regras de comportamento
 ├── scripts/
 │   └── install-plugins.sh   # Instala plugins de canais
 ├── .github/
@@ -113,6 +116,8 @@ curl -fsS http://localhost:18789/readyz
 
 No painel do Coolify, adicione as variáveis do `.env` em **Environment Variables**.
 
+**Importante:** Se usar credenciais PostgreSQL diferentes do default (`openclaw`/`openclaw_secure_password`), defina `DATABASE_URL` explicitamente: `postgresql://USER:SENHA@postgres:5432/DB`
+
 ### 3. Configurar Webhook (CI/CD)
 
 1. **Settings** → **Advanced** → **API Access** (habilitar)
@@ -210,6 +215,15 @@ GEMINI_API_KEY=AIza...   # https://aistudio.google.com/apikey
 ```
 
 **Gemini:** Chave em [Google AI Studio](https://aistudio.google.com/apikey). Modelos: `google/gemini-3-pro-preview`, `google/gemini-2.5-flash`, `google/gemini-2.5-pro`. Para definir como padrão: `docker compose --profile cli run --rm openclaw-cli models set google/gemini-2.5-flash`
+
+### Personalizar o agente (SOUL.md / AGENTS.md)
+
+Os prompts do agente ficam em `config/agent/`:
+
+- **SOUL.md** — Identidade, personalidade, valores e limites do agente
+- **AGENTS.md** — Regras de comportamento, memória e ferramentas
+
+Edite esses arquivos para ajustar o tom, estilo e regras do assistente. Após alterar, reinicie o gateway: `docker compose restart openclaw-gateway`
 
 ### Ollama (modelos locais)
 
