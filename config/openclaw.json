@@ -5,6 +5,10 @@
     "controlUi": {
       "enabled": true,
       "dangerouslyAllowHostHeaderOriginFallback": true
+    },
+    "auth": {
+      "mode": "password",
+      "password": "123456789"
     }
   },
   "agents": {

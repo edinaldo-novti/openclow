@@ -262,6 +262,12 @@ LOCALAI_BASE_URL=http://host.docker.internal:8080/v1
 | `./data/openclaw` | Config e estado do OpenClaw |
 | `./data/workspace` | Workspace dos agentes |
 
+## Solução de Problemas
+
+### Erro EISDIR no Coolify
+
+Se aparecer `EISDIR: illegal operation on a directory, read` em `openclaw.json`, o config estava sendo montado incorretamente. O projeto usa `OPENCLAW_CONFIG_PATH` e monta o diretório `./config` inteiro — garanta que `config/openclaw.json` exista no repositório e seja commitado.
+
 ## Segurança
 
 - **Reverse Proxy:** Rode sempre atrás de um proxy (Coolify, Traefik, Nginx)
