@@ -44,6 +44,17 @@ services:
     restart: unless-stopped
 
   # =============================================================================
+  # Init - Ajusta permissões do volume (evita EACCES no Coolify)
+  # =============================================================================
+  openclaw-init:
+    image: alpine:3.19
+    volumes:
+      - openclaw_data:/home/node/.openclaw
+    user: root
+    command: ["sh", "-c", "mkdir -p /home/node/.openclaw/workspace /home/node/.openclaw/canvas /home/node/.openclaw/cron && chown -R 1000:1000 /home/node/.openclaw"]
+    restart: "no"
+
+  # =============================================================================
   # Application Layer - OpenClaw Gateway
   # =============================================================================
   openclaw-gateway:
@@ -82,11 +93,8 @@ services:
       # Config em /tmp (sempre gravável; evita permission denied no volume)
       OPENCLAW_CONFIG_PATH: /tmp/openclaw-config/openclaw.json
     volumes:
-      - ${OPENCLAW_CONFIG_DIR:-./data/openclaw}:/home/node/.openclaw
-      - ${OPENCLAW_WORKSPACE_DIR:-./data/workspace}:/home/node/.openclaw/workspace
+      - openclaw_data:/home/node/.openclaw
       - ./config:/config-source:ro
-      - ./config/agent/SOUL.md:/home/node/.openclaw/workspace/SOUL.md
-      - ./config/agent/AGENTS.md:/home/node/.openclaw/workspace/AGENTS.md
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -94,6 +102,8 @@ services:
       - "${OPENCLAW_BRIDGE_PORT:-18790}:18790"
       - "${MSTEAMS_WEBHOOK_PORT:-3978}:3978"
     depends_on:
+      openclaw-init:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       redis:
@@ -107,6 +117,8 @@ services:
         else
           printf '%s' '{"gateway":{"mode":"local","bind":"lan","controlUi":{"enabled":true,"dangerouslyAllowHostHeaderOriginFallback":true}},"agents":{"defaults":{"model":{"primary":"google/gemini-2.5-flash"}}}}' > /tmp/openclaw-config/openclaw.json
         fi
+        cp /config-source/agent/SOUL.md /home/node/.openclaw/workspace/ 2>/dev/null || true
+        cp /config-source/agent/AGENTS.md /home/node/.openclaw/workspace/ 2>/dev/null || true
         exec node dist/index.js gateway --allow-unconfigured --bind "$${OPENCLAW_GATEWAY_BIND:-lan}" --port 18789
     init: true
     restart: unless-stopped
@@ -202,22 +214,21 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       OPENCLAW_CONFIG_PATH: /tmp/openclaw-config/openclaw.json
     volumes:
-      - ${OPENCLAW_CONFIG_DIR:-./data/openclaw}:/home/node/.openclaw
-      - ${OPENCLAW_WORKSPACE_DIR:-./data/workspace}:/home/node/.openclaw/workspace
+      - openclaw_data:/home/node/.openclaw
       - ./config:/config-source:ro
-      - ./config/agent/SOUL.md:/home/node/.openclaw/workspace/SOUL.md
-      - ./config/agent/AGENTS.md:/home/node/.openclaw/workspace/AGENTS.md
     stdin_open: true
     tty: true
     entrypoint: ["sh", "-c"]
     command:
       - |
-        mkdir -p /tmp/openclaw-config
+        mkdir -p /tmp/openclaw-config /home/node/.openclaw/workspace
         if [ -f /config-source/openclaw.json ] && [ -s /config-source/openclaw.json ] && grep -q '}' /config-source/openclaw.json; then
           cp /config-source/openclaw.json /tmp/openclaw-config/openclaw.json
         else
           printf '%s' '{"gateway":{"mode":"local","bind":"lan","controlUi":{"enabled":true,"dangerouslyAllowHostHeaderOriginFallback":true}},"agents":{"defaults":{"model":{"primary":"google/gemini-2.5-flash"}}}}' > /tmp/openclaw-config/openclaw.json
         fi
+        cp /config-source/agent/SOUL.md /home/node/.openclaw/workspace/ 2>/dev/null || true
+        cp /config-source/agent/AGENTS.md /home/node/.openclaw/workspace/ 2>/dev/null || true
         exec node dist/index.js "$$0" "$$@"
     init: true
     depends_on:
@@ -234,6 +245,8 @@ networks:
     internal: true  # PostgreSQL e Redis isolados; gateway acessa via rede frontend
 
 volumes:
+  openclaw_data:
+    driver: local
   postgres_data:
     driver: local
   redis_data:

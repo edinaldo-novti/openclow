@@ -18,9 +18,6 @@ openclow/
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml      # CI/CD para Coolify
-├── data/                   # Dados persistentes (criado automaticamente)
-│   ├── openclaw/           # Configuração e estado do OpenClaw
-│   └── workspace/          # Workspace dos agentes
 └── README.md
 ```
 
@@ -256,17 +253,17 @@ LOCALAI_BASE_URL=http://host.docker.internal:8080/v1
 
 | Volume | Descrição |
 |--------|-----------|
+| `openclaw_data` | Estado, canvas, cron e workspace do OpenClaw |
 | `postgres_data` | Dados do PostgreSQL |
 | `redis_data` | Dados do Redis |
 | `mattermost_*` | Dados do Mattermost (se usar) |
-| `./data/openclaw` | Config e estado do OpenClaw |
-| `./data/workspace` | Workspace dos agentes |
 
 ## Solução de Problemas
 
-### Erro EISDIR no Coolify
+### Erro EISDIR ou EACCES no Coolify
 
-Se aparecer `EISDIR: illegal operation on a directory, read` em `openclaw.json`, o Coolify pode não ter copiado o config corretamente. O projeto usa um **entrypoint** (`scripts/entrypoint.sh`) que copia o config de `./config` para o volume ou cria um config padrão se o arquivo não existir ou for um diretório. Garanta que `scripts/entrypoint.sh` e `config/openclaw.json` estejam commitados no repositório.
+- **EISDIR** em `openclaw.json`: o config é copiado de `./config` ou gerado inline; garanta que `config/openclaw.json` exista no repositório.
+- **EACCES** em `canvas` ou `cron`: o projeto usa volume nomeado `openclaw_data` em vez de bind mount para evitar problemas de permissão.
 
 ## Segurança
 
