@@ -8,8 +8,7 @@
       "dangerouslyDisableDeviceAuth": true
     },
     "auth": {
-      "mode": "password",
-      "password": "123456789"
+      "mode": "token"
     }
   },
   "agents": {

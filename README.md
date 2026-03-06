@@ -266,9 +266,13 @@ LOCALAI_BASE_URL=http://host.docker.internal:8080/v1
 - **EISDIR** em `openclaw.json`: o config é copiado de `./config` ou gerado inline; garanta que `config/openclaw.json` exista no repositório.
 - **EACCES** em `canvas` ou `cron`: o projeto usa volume nomeado `openclaw_data` em vez de bind mount para evitar problemas de permissão.
 
+### Auth do usuário (password_missing / unauthorized)
+
+O gateway usa **token** (`gateway.auth.mode: "token"`). Cole o `OPENCLAW_GATEWAY_TOKEN` em **Settings → Token** no Control UI. Não use o campo "Senha" — use apenas o campo "Token do Gateway".
+
 ### Pareamento (pairing required)
 
-O config usa `gateway.controlUi.dangerouslyDisableDeviceAuth: true` para dispensar aprovação manual de dispositivos. O acesso continua protegido por token ou senha (`gateway.auth`). Use senha forte em produção.
+O config usa `gateway.controlUi.dangerouslyDisableDeviceAuth: true` para dispensar aprovação manual de dispositivos. O acesso continua protegido por token (`gateway.auth`). Use token forte em produção.
 
 ### Proteger o Control UI (login/senha na interface)
 
