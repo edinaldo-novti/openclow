@@ -266,7 +266,7 @@ LOCALAI_BASE_URL=http://host.docker.internal:8080/v1
 
 ### Erro EISDIR no Coolify
 
-Se aparecer `EISDIR: illegal operation on a directory, read` em `openclaw.json`, o config estava sendo montado incorretamente. O projeto usa `OPENCLAW_CONFIG_PATH` e monta o diretório `./config` inteiro — garanta que `config/openclaw.json` exista no repositório e seja commitado.
+Se aparecer `EISDIR: illegal operation on a directory, read` em `openclaw.json`, o Coolify pode não ter copiado o config corretamente. O projeto usa um **entrypoint** (`scripts/entrypoint.sh`) que copia o config de `./config` para o volume ou cria um config padrão se o arquivo não existir ou for um diretório. Garanta que `scripts/entrypoint.sh` e `config/openclaw.json` estejam commitados no repositório.
 
 ## Segurança
 
