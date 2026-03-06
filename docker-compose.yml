@@ -102,10 +102,10 @@ services:
     command:
       - |
         mkdir -p /tmp/openclaw-config
-        if [ -f /config-source/openclaw.json ]; then
+        if [ -f /config-source/openclaw.json ] && [ -s /config-source/openclaw.json ] && grep -q '}' /config-source/openclaw.json; then
           cp /config-source/openclaw.json /tmp/openclaw-config/openclaw.json
         else
-          echo '{"gateway":{"mode":"local","bind":"lan","controlUi":{"enabled":true,"dangerouslyAllowHostHeaderOriginFallback":true},"agents":{"defaults":{"model":{"primary":"google/gemini-2.5-flash"}}}}' > /tmp/openclaw-config/openclaw.json
+          printf '%s' '{"gateway":{"mode":"local","bind":"lan","controlUi":{"enabled":true,"dangerouslyAllowHostHeaderOriginFallback":true}},"agents":{"defaults":{"model":{"primary":"google/gemini-2.5-flash"}}}}' > /tmp/openclaw-config/openclaw.json
         fi
         exec node dist/index.js gateway --allow-unconfigured --bind "$${OPENCLAW_GATEWAY_BIND:-lan}" --port 18789
     init: true
@@ -213,10 +213,10 @@ services:
     command:
       - |
         mkdir -p /tmp/openclaw-config
-        if [ -f /config-source/openclaw.json ]; then
+        if [ -f /config-source/openclaw.json ] && [ -s /config-source/openclaw.json ] && grep -q '}' /config-source/openclaw.json; then
           cp /config-source/openclaw.json /tmp/openclaw-config/openclaw.json
         else
-          echo '{"gateway":{"mode":"local","bind":"lan","controlUi":{"enabled":true,"dangerouslyAllowHostHeaderOriginFallback":true},"agents":{"defaults":{"model":{"primary":"google/gemini-2.5-flash"}}}}' > /tmp/openclaw-config/openclaw.json
+          printf '%s' '{"gateway":{"mode":"local","bind":"lan","controlUi":{"enabled":true,"dangerouslyAllowHostHeaderOriginFallback":true}},"agents":{"defaults":{"model":{"primary":"google/gemini-2.5-flash"}}}}' > /tmp/openclaw-config/openclaw.json
         fi
         exec node dist/index.js "$$0" "$$@"
     init: true
