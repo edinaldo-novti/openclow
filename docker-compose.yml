@@ -101,6 +101,9 @@ services:
       - "${OPENCLAW_GATEWAY_PORT:-18789}:18789"
       - "${OPENCLAW_BRIDGE_PORT:-18790}:18790"
       - "${MSTEAMS_WEBHOOK_PORT:-3978}:3978"
+    labels:
+      # Coolify/Traefik: porta do loadbalancer (evita 502 quando domínio não inclui :18789)
+      - "traefik.http.services.openclaw-gateway.loadbalancer.server.port=18789"
     depends_on:
       openclaw-init:
         condition: service_completed_successfully
@@ -132,7 +135,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
-    # Coolify gerencia o reverse proxy automaticamente via painel
+    # Coolify: no domínio use https://ia.nogui.com.br:18789 (a porta informa o proxy)
 
   # =============================================================================
   # Mattermost - Chat self-hosted (comunidade open-source)

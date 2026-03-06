@@ -124,14 +124,13 @@ No painel do Coolify, adicione as variáveis do `.env` em **Environment Variable
    - `COOLIFY_WEBHOOK`: URL do webhook
    - `COOLIFY_TOKEN`: Token da API
 
-### 4. Portas no Coolify
+### 4. Domínios e portas no Coolify
 
-O Coolify gera o reverse proxy automaticamente. Configure:
+O Coolify gera o reverse proxy automaticamente. **Importante:** no campo de domínio do `openclaw-gateway`, use a porta para o proxy rotear corretamente:
 
-- **Porta 18789:** Gateway (Control UI + WebSocket)
-- **Porta 18790:** Bridge (WebSocket)
-- **Porta 3978:** Microsoft Teams webhook (se usar Teams)
-- **Porta 8065:** Mattermost (se usar profile mattermost)
+- **openclaw-gateway:** `https://ia.nogui.com.br:18789` (a porta informa o loadbalancer; o acesso público continua via `https://ia.nogui.com.br`)
+- **mattermost:** `https://bro.nogui.com.br:8065`
+- **openclaw-init:** deixe vazio (não é serviço web)
 
 ## Canais de Chat
 
