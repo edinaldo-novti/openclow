@@ -79,11 +79,12 @@ services:
       # Mattermost (plugin @openclaw/mattermost)
       MATTERMOST_BASE_URL: ${MATTERMOST_BASE_URL:-http://mattermost:8065}
       MATTERMOST_BOT_TOKEN: ${MATTERMOST_BOT_TOKEN:-}
+      # Config em /tmp (sempre gravável; evita permission denied no volume)
+      OPENCLAW_CONFIG_PATH: /tmp/openclaw-config/openclaw.json
     volumes:
       - ${OPENCLAW_CONFIG_DIR:-./data/openclaw}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR:-./data/workspace}:/home/node/.openclaw/workspace
       - ./config:/config-source:ro
-      - ./scripts/entrypoint.sh:/entrypoint.sh:ro
       - ./config/agent/SOUL.md:/home/node/.openclaw/workspace/SOUL.md
       - ./config/agent/AGENTS.md:/home/node/.openclaw/workspace/AGENTS.md
     extra_hosts:
@@ -97,18 +98,18 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    entrypoint: ["sh", "/entrypoint.sh"]
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        mkdir -p /tmp/openclaw-config
+        if [ -f /config-source/openclaw.json ]; then
+          cp /config-source/openclaw.json /tmp/openclaw-config/openclaw.json
+        else
+          echo '{"gateway":{"mode":"local","bind":"lan","controlUi":{"enabled":true,"dangerouslyAllowHostHeaderOriginFallback":true},"agents":{"defaults":{"model":{"primary":"google/gemini-2.5-flash"}}}}' > /tmp/openclaw-config/openclaw.json
+        fi
+        exec node dist/index.js gateway --allow-unconfigured --bind "$${OPENCLAW_GATEWAY_BIND:-lan}" --port 18789
     init: true
     restart: unless-stopped
-    command:
-      - node
-      - dist/index.js
-      - gateway
-      - --allow-unconfigured
-      - --bind
-      - "${OPENCLAW_GATEWAY_BIND:-lan}"
-      - --port
-      - "18789"
     healthcheck:
       test:
         - CMD
@@ -199,16 +200,25 @@ services:
       CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY:-}
       CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENCLAW_CONFIG_PATH: /tmp/openclaw-config/openclaw.json
     volumes:
       - ${OPENCLAW_CONFIG_DIR:-./data/openclaw}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR:-./data/workspace}:/home/node/.openclaw/workspace
       - ./config:/config-source:ro
-      - ./scripts/entrypoint.sh:/entrypoint.sh:ro
       - ./config/agent/SOUL.md:/home/node/.openclaw/workspace/SOUL.md
       - ./config/agent/AGENTS.md:/home/node/.openclaw/workspace/AGENTS.md
     stdin_open: true
     tty: true
-    entrypoint: ["sh", "/entrypoint.sh"]
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        mkdir -p /tmp/openclaw-config
+        if [ -f /config-source/openclaw.json ]; then
+          cp /config-source/openclaw.json /tmp/openclaw-config/openclaw.json
+        else
+          echo '{"gateway":{"mode":"local","bind":"lan","controlUi":{"enabled":true,"dangerouslyAllowHostHeaderOriginFallback":true},"agents":{"defaults":{"model":{"primary":"google/gemini-2.5-flash"}}}}' > /tmp/openclaw-config/openclaw.json
+        fi
+        exec node dist/index.js "$$0" "$$@"
     init: true
     depends_on:
       openclaw-gateway:
