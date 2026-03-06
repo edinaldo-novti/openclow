@@ -1,0 +1,49 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment (nunca incluir secrets no build)
+.env
+.env.*
+!.env.example
+
+# Data e volumes
+data/
+*.sqlite
+*.db
+
+# IDE e editor
+.idea/
+.vscode/
+.cursor/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs e cache
+*.log
+logs/
+.cache/
+node_modules/
+
+# Documentação (não necessária na imagem)
+*.md
+docs/
+
+# CI/CD (não necessário na imagem)
+.github/
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Misc
+*.tmp
+*.temp
+tmp/
+temp/

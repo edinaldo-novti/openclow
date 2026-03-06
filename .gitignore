@@ -1,0 +1,32 @@
+# Environment
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Data (persistente - não versionar)
+data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.cursor/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Docker
+docker-compose.override.yml
+.docker/
+
+# Misc
+*.tmp
+*.temp
+.cache/

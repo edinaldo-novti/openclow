@@ -1,0 +1,230 @@
+# OpenClaw Server - Infraestrutura Profissional
+# Documentação: https://docs.openclaw.ai/install/docker
+
+services:
+  # =============================================================================
+  # Database Layer
+  # =============================================================================
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: openclaw-postgres
+    networks:
+      - backend
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-openclaw}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-openclaw_secure_password}
+      POSTGRES_DB: ${POSTGRES_DB:-openclaw}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-openclaw} -d ${POSTGRES_DB:-openclaw}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  # =============================================================================
+  # Cache/Queue Layer
+  # =============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: openclaw-redis
+    networks:
+      - backend
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  # =============================================================================
+  # Application Layer - OpenClaw Gateway
+  # =============================================================================
+  openclaw-gateway:
+    image: ${OPENCLAW_IMAGE:-ghcr.io/openclaw/openclaw:latest}
+    container_name: openclaw-gateway
+    networks:
+      - frontend
+      - backend
+    environment:
+      HOME: /home/node
+      TERM: xterm-256color
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      OPENCLAW_GATEWAY_BIND: ${OPENCLAW_GATEWAY_BIND:-lan}
+      OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: ${OPENCLAW_ALLOW_INSECURE_PRIVATE_WS:-}
+      # Database (opcional - OpenClaw usa SQLite por padrão)
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-openclaw}:${POSTGRES_PASSWORD:-openclaw_secure_password}@postgres:5432/${POSTGRES_DB:-openclaw}}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      # API Keys - OpenAI, Anthropic, Google Gemini
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      # Ollama/LocalAI - host.docker.internal para acesso ao host
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      # Claude AI session (opcional)
+      CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY:-}
+      CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY:-}
+      CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE:-}
+      # Microsoft Teams (plugin @openclaw/msteams)
+      MSTEAMS_APP_ID: ${MSTEAMS_APP_ID:-}
+      MSTEAMS_APP_PASSWORD: ${MSTEAMS_APP_PASSWORD:-}
+      MSTEAMS_TENANT_ID: ${MSTEAMS_TENANT_ID:-}
+      # Mattermost (plugin @openclaw/mattermost)
+      MATTERMOST_BASE_URL: ${MATTERMOST_BASE_URL:-http://mattermost:8065}
+      MATTERMOST_BOT_TOKEN: ${MATTERMOST_BOT_TOKEN:-}
+    volumes:
+      - ${OPENCLAW_CONFIG_DIR:-./data/openclaw}:/home/node/.openclaw
+      - ${OPENCLAW_WORKSPACE_DIR:-./data/workspace}:/home/node/.openclaw/workspace
+      - ./config/openclaw.json:/home/node/.openclaw/openclaw.json
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${OPENCLAW_GATEWAY_PORT:-18789}:18789"
+      - "${OPENCLAW_BRIDGE_PORT:-18790}:18790"
+      - "${MSTEAMS_WEBHOOK_PORT:-3978}:3978"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    init: true
+    restart: unless-stopped
+    command:
+      - node
+      - dist/index.js
+      - gateway
+      - --allow-unconfigured
+      - --bind
+      - "${OPENCLAW_GATEWAY_BIND:-lan}"
+      - --port
+      - "18789"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:18789/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    # Coolify gerencia o reverse proxy automaticamente via painel
+
+  # =============================================================================
+  # Mattermost - Chat self-hosted (comunidade open-source)
+  # =============================================================================
+  mattermost-db:
+    image: postgres:16-alpine
+    container_name: mattermost-postgres
+    networks:
+      - backend
+    volumes:
+      - mattermost_postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${MATTERMOST_DB_USER:-mmuser}
+      POSTGRES_PASSWORD: ${MATTERMOST_DB_PASSWORD:-mmuser_password}
+      POSTGRES_DB: ${MATTERMOST_DB_NAME:-mattermost}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MATTERMOST_DB_USER:-mmuser} -d ${MATTERMOST_DB_NAME:-mattermost}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    profiles:
+      - mattermost
+
+  mattermost:
+    image: mattermost/mattermost-team-edition:10
+    container_name: mattermost
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      mattermost-db:
+        condition: service_healthy
+    environment:
+      MM_SQLSETTINGS_DRIVERNAME: postgres
+      MM_SQLSETTINGS_DATASOURCE: postgres://${MATTERMOST_DB_USER:-mmuser}:${MATTERMOST_DB_PASSWORD:-mmuser_password}@mattermost-db:5432/${MATTERMOST_DB_NAME:-mattermost}?sslmode=disable&connect_timeout=10
+      MM_SERVICESETTINGS_SITEURL: ${MATTERMOST_SITE_URL:-http://localhost:8065}
+      MM_SERVICESETTINGS_ENABLEOUTGOINGWEBHOOKS: "true"
+      MM_SERVICESETTINGS_ENABLEINCOMINGWEBHOOKS: "true"
+      MM_SERVICESETTINGS_ALLOWEDUNTRUSTEDINTERNALCONNECTIONS: "openclaw-gateway"
+    volumes:
+      - mattermost_data:/mattermost/data
+      - mattermost_config:/mattermost/config
+      - mattermost_logs:/mattermost/logs
+    ports:
+      - "${MATTERMOST_PORT:-8065}:8065"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8065/api/v4/system/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    restart: unless-stopped
+    profiles:
+      - mattermost
+
+  # =============================================================================
+  # CLI Service - Para comandos administrativos (onboard, channels, etc.)
+  # =============================================================================
+  openclaw-cli:
+    image: ${OPENCLAW_IMAGE:-ghcr.io/openclaw/openclaw:latest}
+    container_name: openclaw-cli
+    network_mode: "service:openclaw-gateway"
+    cap_drop:
+      - NET_RAW
+      - NET_ADMIN
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      HOME: /home/node
+      TERM: xterm-256color
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: ${OPENCLAW_ALLOW_INSECURE_PRIVATE_WS:-}
+      BROWSER: echo
+      CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY:-}
+      CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY:-}
+      CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    volumes:
+      - ${OPENCLAW_CONFIG_DIR:-./data/openclaw}:/home/node/.openclaw
+      - ${OPENCLAW_WORKSPACE_DIR:-./data/workspace}:/home/node/.openclaw/workspace
+      - ./config/openclaw.json:/home/node/.openclaw/openclaw.json
+    stdin_open: true
+    tty: true
+    init: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-gateway:
+        condition: service_healthy
+    profiles:
+      - cli
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true  # PostgreSQL e Redis isolados; gateway acessa via rede frontend
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  mattermost_postgres_data:
+    driver: local
+  mattermost_data:
+    driver: local
+  mattermost_config:
+    driver: local
+  mattermost_logs:
+    driver: local

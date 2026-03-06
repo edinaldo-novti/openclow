@@ -1,0 +1,21 @@
+{
+  "channels": {
+    "msteams": {
+      "enabled": true,
+      "appId": "${MSTEAMS_APP_ID}",
+      "appPassword": "${MSTEAMS_APP_PASSWORD}",
+      "tenantId": "${MSTEAMS_TENANT_ID}",
+      "webhook": { "port": 3978, "path": "/api/messages" },
+      "dmPolicy": "pairing",
+      "groupPolicy": "open"
+    },
+    "mattermost": {
+      "enabled": true,
+      "baseUrl": "${MATTERMOST_BASE_URL:-http://mattermost:8065}",
+      "botToken": "${MATTERMOST_BOT_TOKEN}",
+      "dmPolicy": "pairing",
+      "groupPolicy": "open",
+      "chatmode": "oncall"
+    }
+  }
+}

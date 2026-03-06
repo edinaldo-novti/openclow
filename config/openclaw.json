@@ -1,0 +1,17 @@
+{
+  "gateway": {
+    "mode": "local",
+    "bind": "lan",
+    "controlUi": {
+      "enabled": true,
+      "dangerouslyAllowHostHeaderOriginFallback": true
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "google/gemini-2.5-flash"
+      }
+    }
+  }
+}

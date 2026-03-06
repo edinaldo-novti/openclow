@@ -1,0 +1,67 @@
+# =============================================================================
+# OpenClaw Server - CI/CD para Coolify
+# Dispara deploy via Webhook após push na branch main
+# =============================================================================
+
+name: Deploy to Coolify
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
+  COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+
+jobs:
+  lint:
+    name: Lint YAML
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-cache: "npm"
+
+      - name: Install yamllint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yamllint
+
+      - name: Lint Docker Compose
+        run: |
+          yamllint -d relaxed docker-compose.yml || true
+          yamllint -d relaxed .github/workflows/*.yml || true
+
+      - name: Validate Docker Compose
+        run: |
+          docker compose -f docker-compose.yml config --quiet
+
+  deploy:
+    name: Deploy to Coolify
+    runs-on: ubuntu-latest
+    needs: lint
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Trigger Coolify Deploy
+        run: |
+          if [ -z "${{ secrets.COOLIFY_WEBHOOK }}" ]; then
+            echo "::warning::COOLIFY_WEBHOOK not configured. Skipping deploy."
+            exit 0
+          fi
+          response=$(curl -s -w "\n%{http_code}" \
+            --request GET "${{ secrets.COOLIFY_WEBHOOK }}" \
+            --header "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}" \
+            --header "Content-Type: application/json")
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          echo "Response ($http_code): $body"
+          if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+            echo "::notice::Deploy triggered successfully"
+          else
+            echo "::warning::Deploy webhook returned $http_code"
+          fi
