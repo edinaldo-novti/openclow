@@ -161,11 +161,9 @@ services:
       retries: 5
       start_period: 10s
     restart: unless-stopped
-    profiles:
-      - mattermost
 
   mattermost:
-    image: mattermost/mattermost-team-edition:10
+    image: mattermost/mattermost-team-edition:release-10
     container_name: mattermost
     networks:
       - frontend
@@ -186,6 +184,9 @@ services:
       - mattermost_logs:/mattermost/logs
     ports:
       - "${MATTERMOST_PORT:-8065}:8065"
+    labels:
+      # Coolify/Traefik: porta do loadbalancer para bro.nogui.com.br
+      - "traefik.http.services.mattermost.loadbalancer.server.port=8065"
     healthcheck:
       test: ["CMD", "wget", "-q", "-O-", "http://localhost:8065/api/v4/system/ping"]
       interval: 30s
@@ -193,8 +194,6 @@ services:
       retries: 3
       start_period: 90s
     restart: unless-stopped
-    profiles:
-      - mattermost
 
   # =============================================================================
   # CLI Service - Para comandos administrativos (onboard, channels, etc.)

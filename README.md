@@ -126,11 +126,13 @@ No painel do Coolify, adicione as variáveis do `.env` em **Environment Variable
 
 ### 4. Domínios e portas no Coolify
 
-O Coolify gera o reverse proxy automaticamente. **Importante:** no campo de domínio do `openclaw-gateway`, use a porta para o proxy rotear corretamente:
+O Coolify gera o reverse proxy automaticamente. **Importante:** use a porta no domínio para o proxy rotear corretamente:
 
-- **openclaw-gateway:** `https://ia.nogui.com.br:18789` (a porta informa o loadbalancer; o acesso público continua via `https://ia.nogui.com.br`)
+- **openclaw-gateway:** `https://ia.nogui.com.br:18789`
 - **mattermost:** `https://bro.nogui.com.br:8065`
 - **openclaw-init:** deixe vazio (não é serviço web)
+
+Para o Mattermost, defina `MATTERMOST_SITE_URL=https://bro.nogui.com.br` nas variáveis de ambiente.
 
 ## Canais de Chat
 
