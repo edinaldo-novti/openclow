@@ -270,13 +270,11 @@ O config usa `gateway.controlUi.dangerouslyDisableDeviceAuth: true` para dispens
 
 ### Proteger o Control UI (login/senha na interface)
 
-O projeto usa **Basic Auth** no Traefik para exigir login antes de acessar a interface. Credenciais padrão: `admin` / `openclaw_secret` — **troque em produção!**
+O Basic Auth está **comentado** por padrão (pode causar 503 em algumas versões do Coolify). Para ativar:
 
-Para definir seu próprio usuário e senha:
-```bash
-htpasswd -nbB seu_usuario sua_senha | sed 's/\$/\$\$/g'
-```
-Adicione o resultado em `OPENCLAW_BASIC_AUTH_USERS` no Coolify ou `.env`.
+1. Descomente a linha do middleware em `docker-compose.yml` (labels do openclaw-gateway)
+2. Credenciais padrão: `admin` / `openclaw_secret` — **troque em produção!**
+3. Para credenciais customizadas: `htpasswd -nbB usuario senha | sed 's/\$/\$\$/g'` → `OPENCLAW_BASIC_AUTH_USERS`
 
 ## Segurança
 

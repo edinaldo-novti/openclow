@@ -105,8 +105,8 @@ services:
       # Coolify/Traefik: porta do loadbalancer (evita 502 quando domínio não inclui :18789)
       - "traefik.http.services.openclaw-gateway.loadbalancer.server.port=18789"
       # Basic Auth: protege a interface (login/senha antes de acessar o Control UI)
-      # Gere com: htpasswd -nbB USUARIO SENHA | sed 's/\$/\$\$/g'
-      - "traefik.http.middlewares.openclaw-basicauth.basicauth.users=${OPENCLAW_BASIC_AUTH_USERS:-admin:$$2b$$12$$vrIWOssdtm.1tGMSRcO58OeBF3Wibue5nx5EkPLqvOcrT1wGjhN7C}"
+      # Descomente para ativar; gere hash com: htpasswd -nbB USUARIO SENHA | sed 's/\$/\$\$/g'
+      # - "traefik.http.middlewares.openclaw-basicauth.basicauth.users=${OPENCLAW_BASIC_AUTH_USERS:-admin:$$2b$$12$$vrIWOssdtm.1tGMSRcO58OeBF3Wibue5nx5EkPLqvOcrT1wGjhN7C}"
     depends_on:
       openclaw-init:
         condition: service_completed_successfully
